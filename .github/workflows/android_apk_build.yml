@@ -1,0 +1,46 @@
+name: Build Phantom Thief P5 Android 16 APK
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: JDK 21 & Android SDK 36 Cloud Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK (API Level 36 / Baklava)
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK Licenses & Install SDK 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Setup Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Build Debug APK via Gradle
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Upload PhantomThiefAgent-debug.apk to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhantomThief-P5-K80Ultra-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
